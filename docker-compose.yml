@@ -1,0 +1,34 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: browser-use-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  browser-use:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: browser-use-app
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - browser_data:/data
+    restart: unless-stopped
+    # Default entrypoint runs browser-use CLI. Override command as needed.
+    # command: ["--help"]
+
+volumes:
+  ollama_data:
+  browser_data:
